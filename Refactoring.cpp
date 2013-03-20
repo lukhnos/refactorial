@@ -13,10 +13,10 @@
 
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/SourceManager.h"
-#include "clang/Frontend/DiagnosticOptions.h"
+#include "clang/Basic/DiagnosticOptions.h"
 #include "clang/Frontend/TextDiagnosticPrinter.h"
 #include "clang/Lex/Lexer.h"
-#include "clang/Rewrite/Rewriter.h"
+#include "clang/Rewrite/Core/Rewriter.h"
 #include "llvm/Support/raw_os_ostream.h"
 #include <algorithm>
 
@@ -181,12 +181,15 @@ Replacements &RefactoringTool::getReplacements() { return Replace; }
 int RefactoringTool::run(FrontendActionFactory *ActionFactory) {
   int Result = Tool.run(ActionFactory);
   LangOptions DefaultLangOptions;
-  DiagnosticOptions DefaultDiagnosticOptions;
-  TextDiagnosticPrinter DiagnosticPrinter(llvm::errs(),
-                                          DefaultDiagnosticOptions);
-  DiagnosticsEngine Diagnostics(
-      llvm::IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()),
-      &DiagnosticPrinter, false);
+
+  DiagnosticOptions *DefaultDiagnosticOptions = new DiagnosticOptions;
+  TextDiagnosticPrinter *DiagnosticPrinter = 
+    new TextDiagnosticPrinter(llvm::errs(), DefaultDiagnosticOptions);
+  IntrusiveRefCntPtr<clang::DiagnosticIDs> DiagID(new clang::DiagnosticIDs());
+  DiagnosticsEngine Diagnostics(DiagID, 
+                                DefaultDiagnosticOptions, 
+                                DiagnosticPrinter);
+
   SourceManager Sources(Diagnostics, Tool.getFiles());
   Rewriter Rewrite(Sources, DefaultLangOptions);
   if (!applyAllReplacements(Replace, Rewrite)) {

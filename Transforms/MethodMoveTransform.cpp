@@ -9,7 +9,7 @@
 #include <clang/Sema/Sema.h>
 #include <llvm/Support/raw_ostream.h>
 #include <clang/Lex/Preprocessor.h>
-#include <clang/Rewrite/Rewriter.h>
+#include <clang/Rewrite/Core/Rewriter.h>
 
 using namespace clang;
 

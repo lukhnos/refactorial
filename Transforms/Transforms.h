@@ -3,10 +3,11 @@
 
 #include <string>
 #include <vector>
+#include <stdint.h>
 
 #include <clang/AST/ASTContext.h>
 #include <clang/Lex/Lexer.h>
-#include <clang/Rewrite/Rewriter.h>
+#include <clang/Rewrite/Core/Rewriter.h>
 #include <clang/Sema/Sema.h>
 #include <clang/Sema/SemaConsumer.h>
 #include <clang/Tooling/Tooling.h>
