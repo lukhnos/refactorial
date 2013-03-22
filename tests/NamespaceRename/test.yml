@@ -1,0 +1,8 @@
+---
+Transforms:
+  TypeRename:
+    Types:
+      - SampleNameSpace: Ns
+      - class SampleNameSpace::Foo: Foobar
+      - toto_t: bar_t
+

@@ -124,7 +124,7 @@ protected:
     if (QN.size() == 0) {
       return false;
     }
-    
+
     // special handling for TagDecl
     if (auto T = llvm::dyn_cast<clang::TagDecl>(D)) {
       auto KN = T->getKindName();

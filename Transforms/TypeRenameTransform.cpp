@@ -119,6 +119,12 @@ void TypeRenameTransform::collectRenameDecls(DeclContext *DC, bool topLevel)
         collectRenameDecls(RD);
       }
     }
+    else if (auto D = dyn_cast<NamespaceDecl>(*I)) {
+      std::string newName;
+      if (nameMatches(D, newName)) {
+        renameLocation(L, newName);
+      }
+    }
 
     // descend into the next level (namespace, etc.)    
     if (auto innerDC = dyn_cast<DeclContext>(*I)) {
@@ -211,6 +217,11 @@ void TypeRenameTransform::processDeclContext(DeclContext *DC, bool topLevel)
         processTypeLoc(TSI->getTypeLoc());
       }
     }
+    // else if (auto D = dyn_cast<NamespaceDecl>(*I)) {
+    //   if (auto TSI = D->getTypeSourceInfo()) {
+    //     processTypeLoc(TSI->getTypeLoc());
+    //   }
+    // }
     else if (auto D = dyn_cast<ObjCMethodDecl>(*I)) {
       // if no type source info, it's a void f(void) function
       auto TSI = D->getResultTypeSourceInfo();
@@ -279,6 +290,12 @@ void TypeRenameTransform::processDeclContext(DeclContext *DC, bool topLevel)
       // fix class name
       std::string newName;
       if (nameMatches(D->getClassInterface(), newName, true)) {
+        renameLocation(D->getLocation(), newName);
+      }      
+    }
+    else if (auto D = dyn_cast<UsingDirectiveDecl>(*I)) {
+      std::string newName;
+      if (nameMatches(D->getNominatedNamespace(), newName, true)) {
         renameLocation(D->getLocation(), newName);
       }      
     }
@@ -413,7 +430,7 @@ void TypeRenameTransform::processFunctionDecl(FunctionDecl *D)
     if (BL.isValid() && P->getLocation() != BL &&
         nameMatches(P, newName, true)) {
     
-      // can't use renameLocation since this is a tricy case        
+      // can't use renameLocation since this is a tricky case        
     
       // need to use raw_identifier because Lexer::findLocationAfterToken
       // performs a raw lexing
@@ -639,7 +656,7 @@ void TypeRenameTransform::processTypeLoc(TypeLoc TL, bool forceRewriteMacro)
     }
       
       
-    default:
+    default: 
       break;
   }
   
@@ -654,12 +671,35 @@ void TypeRenameTransform::processQualifierLoc(NestedNameSpecifierLoc NNSL,
   while (NNSL) {
     auto NNS = NNSL.getNestedNameSpecifier();
     auto NNSK = NNS->getKind();
-    if (NNSK == NestedNameSpecifier::TypeSpec || NNSK == NestedNameSpecifier::TypeSpecWithTemplate) {
+    if (NNSK == NestedNameSpecifier::TypeSpec ||
+        NNSK == NestedNameSpecifier::TypeSpecWithTemplate) {
+      processTypeLoc(NNSL.getTypeLoc(), forceRewriteMacro);
+    } 
+    else if (NNSK == NestedNameSpecifier::Namespace) {
+      std::string newName;
+      if (nameMatches(NNS->getAsNamespace(), newName, true)) {
+        renameLocation(NNSL.getLocalBeginLoc(), newName);
+      }      
       processTypeLoc(NNSL.getTypeLoc(), forceRewriteMacro);
     }
-    
+    else if (NNSK == NestedNameSpecifier::NamespaceAlias) {
+      std::string newName;
+      if (nameMatches(NNS->getAsNamespaceAlias(), newName, true)) {
+        renameLocation(NNSL.getLocalBeginLoc(), newName);
+      }      
+      processTypeLoc(NNSL.getTypeLoc(), forceRewriteMacro);
+    }
+    // else {
+    //   auto srcrange = NNSL.getSourceRange();
+    //   llvm::errs() << indent()
+    //                << "==> ??? (" << ii << ") "
+    //                << " range=[" << range(srcrange)
+    //                << "\n";
+    //   break;
+    // }
+
     NNSL = NNSL.getPrefix();
-  }  
+  }
 }
 
 void TypeRenameTransform::processParmVarDecl(ParmVarDecl *P)
