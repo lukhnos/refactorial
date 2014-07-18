@@ -512,9 +512,9 @@ void TypeRenameTransform::processTypeLoc(TypeLoc TL, bool forceRewriteMacro)
   switch(TL.getTypeLocClass()) {    
     case TypeLoc::FunctionProto:
     {
-      if (auto FTL = dyn_cast<FunctionTypeLoc>(&TL)) {
-        for (unsigned I = 0, E = FTL->getNumArgs(); I != E; ++I) {
-          processParmVarDecl(FTL->getArg(I));
+      if (FunctionTypeLoc FTL = TL.getAs<FunctionTypeLoc>()) {
+        for (unsigned I = 0, E = FTL.getNumArgs(); I != E; ++I) {
+          processParmVarDecl(FTL.getArg(I));
         }
       }
       break;
@@ -525,20 +525,20 @@ void TypeRenameTransform::processTypeLoc(TypeLoc TL, bool forceRewriteMacro)
     // (so that we can handle nested classes, in-class typedefs, etc.)
     case TypeLoc::Elaborated:
     {
-      if (auto ETL = dyn_cast<ElaboratedTypeLoc>(&TL)) {
-        processQualifierLoc(ETL->getQualifierLoc(), forceRewriteMacro);
+      if (ElaboratedTypeLoc ETL = TL.getAs<ElaboratedTypeLoc>()) {
+        processQualifierLoc(ETL.getQualifierLoc(), forceRewriteMacro);
       }
       break;
     }
     
     case TypeLoc::ObjCObject:
     {
-      if (auto OT = dyn_cast<ObjCObjectTypeLoc>(&TL)) {
-        for (unsigned I = 0, E = OT->getNumProtocols(); I != E; ++I) {
-          if (auto P = OT->getProtocol(I)) {
+      if (ObjCObjectTypeLoc OT = TL.getAs<ObjCObjectTypeLoc>()) {
+        for (unsigned I = 0, E = OT.getNumProtocols(); I != E; ++I) {
+          if (auto P = OT.getProtocol(I)) {
             std::string newName;
             if (nameMatches(P, newName, true)) {
-              renameLocation(OT->getProtocolLoc(I), newName);
+              renameLocation(OT.getProtocolLoc(I), newName);
             }
           }
         }
@@ -548,8 +548,8 @@ void TypeRenameTransform::processTypeLoc(TypeLoc TL, bool forceRewriteMacro)
     
     case TypeLoc::InjectedClassName:
     {
-      if (auto TSTL = dyn_cast<InjectedClassNameTypeLoc>(&TL)) {
-        auto CD = TSTL->getDecl();
+      if (InjectedClassNameTypeLoc TSTL = TL.getAs<InjectedClassNameTypeLoc>()) {
+        auto CD = TSTL.getDecl();
         std::string newName;
         if (nameMatches(CD, newName, true)) {
           renameLocation(BL, newName);          
@@ -560,7 +560,7 @@ void TypeRenameTransform::processTypeLoc(TypeLoc TL, bool forceRewriteMacro)
     
     case TypeLoc::TemplateSpecialization:
     {
-      if (auto TSTL = dyn_cast<TemplateSpecializationTypeLoc>(&TL)) {
+      if (TemplateSpecializationTypeLoc TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
         
         // See if it's the template name that needs renaming
         auto T = TL.getTypePtr();
@@ -572,16 +572,16 @@ void TypeRenameTransform::processTypeLoc(TypeLoc TL, bool forceRewriteMacro)
 
           std::string newName;
           if (nameMatches(TTD, newName, true)) {
-            renameLocation(TSTL->getTemplateNameLoc(), newName);
+            renameLocation(TSTL.getTemplateNameLoc(), newName);
           }
         }
 
         // iterate through the args
-        for (unsigned I = 0, E = TSTL->getNumArgs(); I != E; ++I) {
+        for (unsigned I = 0, E = TSTL.getNumArgs(); I != E; ++I) {
           
           // need to see if the template argument is also a type
           // (we skip things like Foo<1> )
-          auto AL = TSTL->getArgLoc(I);
+          auto AL = TSTL.getArgLoc(I);
           auto A = AL.getArgument();
           if (A.getKind() != TemplateArgument::Type) {
             continue;

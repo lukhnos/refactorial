@@ -89,8 +89,10 @@ void ExtractParameterTransform::process()
 		else
 		{
 			TypeLoc TL = FN->getTypeSourceInfo()->getTypeLoc();
-			SourceLocation lParenLoc = dyn_cast<FunctionTypeLoc>(&TL)->getLocalRangeBegin();
-			insertionLoc = getLocForEndOfToken(lParenLoc);
+			if (FunctionTypeLoc funTypeLoc = TL.getAs<FunctionTypeLoc>()) {
+				SourceLocation lParenLoc = funTypeLoc.getLocalRangeBegin();
+				insertionLoc = getLocForEndOfToken(lParenLoc);
+			}
 		}
 		vector<YAML::Node> transformData = TransformRegistry::get().config["ExtractParameter"].as<vector<YAML::Node> >();
 		for(auto CI = transformData.begin(), CE = transformData.end(); CI != CE; ++CI)

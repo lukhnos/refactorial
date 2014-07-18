@@ -52,11 +52,6 @@ protected:
 	ASTConsumer *CreateASTConsumer(CompilerInstance &CI, llvm::StringRef) {
 		return tcreator();
 	}
-
-	virtual bool BeginInvocation(CompilerInstance &CI) {
-		CI.getHeaderSearchOpts().AddPath("/usr/local/lib/clang/3.2/include", frontend::System, false, false, false);
-		return true;
-	}
 };
 
 TransformFactory::TransformFactory(transform_creator creator) {
